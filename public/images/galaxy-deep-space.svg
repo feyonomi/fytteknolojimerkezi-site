@@ -1,0 +1,106 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bgGradient" x1="185" y1="46" x2="1714" y2="1035" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#020816"/>
+      <stop offset="0.45" stop-color="#041A36"/>
+      <stop offset="1" stop-color="#073A4A"/>
+    </linearGradient>
+
+    <radialGradient id="nebulaCyan" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(420 300) rotate(8) scale(640 420)">
+      <stop offset="0" stop-color="#00F8FF" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#00F8FF" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="nebulaMagenta" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1540 420) rotate(-18) scale(680 460)">
+      <stop offset="0" stop-color="#FF4DDE" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#FF4DDE" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="nebulaPurple" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1120 170) rotate(3) scale(520 300)">
+      <stop offset="0" stop-color="#9D65FF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#9D65FF" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="centerDim" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(960 510) scale(760 430)">
+      <stop offset="0" stop-color="#010711" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#010711" stop-opacity="0.78"/>
+    </radialGradient>
+
+    <linearGradient id="rayGradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#00F8FF" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#00F8FF" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#00F8FF" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="rayGradient2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF4DDE" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#FF4DDE" stop-opacity="0.17"/>
+      <stop offset="1" stop-color="#FF4DDE" stop-opacity="0"/>
+    </linearGradient>
+
+    <pattern id="starsTiny" width="140" height="140" patternUnits="userSpaceOnUse">
+      <circle cx="16" cy="14" r="1" fill="#E8F5FF" fill-opacity="0.82"/>
+      <circle cx="58" cy="36" r="1.1" fill="#B2EEFF" fill-opacity="0.7"/>
+      <circle cx="110" cy="24" r="0.85" fill="#FFD3F3" fill-opacity="0.72"/>
+      <circle cx="28" cy="72" r="0.75" fill="#EEE7FF" fill-opacity="0.64"/>
+      <circle cx="74" cy="96" r="1" fill="#A7D8FF" fill-opacity="0.7"/>
+      <circle cx="124" cy="74" r="0.9" fill="#D7C7FF" fill-opacity="0.7"/>
+      <circle cx="40" cy="126" r="1.15" fill="#F4FAFF" fill-opacity="0.84"/>
+      <circle cx="98" cy="118" r="0.8" fill="#91D2FF" fill-opacity="0.65"/>
+    </pattern>
+
+    <pattern id="starsBright" width="260" height="260" patternUnits="userSpaceOnUse">
+      <circle cx="50" cy="40" r="1.6" fill="#FFFFFF" fill-opacity="0.9"/>
+      <circle cx="200" cy="80" r="1.5" fill="#90F3FF" fill-opacity="0.9"/>
+      <circle cx="150" cy="200" r="1.45" fill="#FFAEF0" fill-opacity="0.88"/>
+      <circle cx="80" cy="170" r="1.45" fill="#BCA7FF" fill-opacity="0.88"/>
+      <circle cx="230" cy="220" r="1.3" fill="#E3F5FF" fill-opacity="0.84"/>
+    </pattern>
+
+    <filter id="blurBig" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="65"/>
+    </filter>
+
+    <linearGradient id="gridLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#73A6CC" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#73A6CC" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#73A6CC" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bgGradient)"/>
+
+  <rect width="1920" height="1080" fill="url(#starsTiny)" opacity="0.7"/>
+  <rect width="1920" height="1080" fill="url(#starsBright)" opacity="0.58"/>
+
+  <ellipse cx="420" cy="300" rx="620" ry="400" fill="url(#nebulaCyan)" filter="url(#blurBig)"/>
+  <ellipse cx="1540" cy="420" rx="650" ry="430" fill="url(#nebulaMagenta)" filter="url(#blurBig)"/>
+  <ellipse cx="1120" cy="170" rx="500" ry="270" fill="url(#nebulaPurple)" filter="url(#blurBig)"/>
+
+  <g opacity="0.32">
+    <rect x="-190" y="260" width="2100" height="1.5" fill="url(#rayGradient)" transform="rotate(-8 860 260)"/>
+    <rect x="-100" y="410" width="2100" height="1.5" fill="url(#rayGradient2)" transform="rotate(9 950 410)"/>
+    <rect x="-150" y="570" width="2200" height="1.2" fill="url(#rayGradient)" transform="rotate(-5 940 570)"/>
+  </g>
+
+  <g opacity="0.42">
+    <path d="M0 1080L960 620L1920 1080" stroke="url(#gridLine)" stroke-width="2"/>
+    <path d="M0 1000L960 560L1920 1000" stroke="url(#gridLine)" stroke-width="1.6"/>
+    <path d="M0 920L960 500L1920 920" stroke="url(#gridLine)" stroke-width="1.3"/>
+    <path d="M0 840L960 450L1920 840" stroke="url(#gridLine)" stroke-width="1.1"/>
+
+    <path d="M180 1080L860 620" stroke="url(#gridLine)" stroke-width="1.25"/>
+    <path d="M340 1080L900 620" stroke="url(#gridLine)" stroke-width="1.25"/>
+    <path d="M500 1080L940 620" stroke="url(#gridLine)" stroke-width="1.25"/>
+    <path d="M660 1080L980 620" stroke="url(#gridLine)" stroke-width="1.25"/>
+    <path d="M820 1080L1020 620" stroke="url(#gridLine)" stroke-width="1.25"/>
+    <path d="M980 1080L1060 620" stroke="url(#gridLine)" stroke-width="1.25"/>
+    <path d="M1140 1080L1100 620" stroke="url(#gridLine)" stroke-width="1.25"/>
+    <path d="M1300 1080L1140 620" stroke="url(#gridLine)" stroke-width="1.25"/>
+    <path d="M1460 1080L1180 620" stroke="url(#gridLine)" stroke-width="1.25"/>
+    <path d="M1620 1080L1220 620" stroke="url(#gridLine)" stroke-width="1.25"/>
+    <path d="M1780 1080L1260 620" stroke="url(#gridLine)" stroke-width="1.25"/>
+  </g>
+
+  <rect width="1920" height="1080" fill="url(#centerDim)"/>
+</svg>
