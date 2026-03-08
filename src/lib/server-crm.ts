@@ -85,6 +85,46 @@ export async function findCustomerRecord(phone: string): Promise<CustomerRecord 
     .maybeSingle();
 
   if (profileQuery.error || !profileQuery.data) {
+    const leadOnlyResult = await supabase
+      .from("lead_requests")
+      .select("id, reference_code, lead_type, full_name, phone, message, status, created_at")
+      .or(buildPhoneFilter("phone", variants))
+      .order("created_at", { ascending: false });
+
+    if (leadOnlyResult.data && leadOnlyResult.data.length > 0) {
+      const latestLead = leadOnlyResult.data[0] as {
+        full_name: string;
+        phone: string;
+      };
+
+      return {
+        id: `lead-${normalizePhone(latestLead.phone)}`,
+        fullName: latestLead.full_name,
+        phone: latestLead.phone,
+        notes: [],
+        repairs: [],
+        purchases: [],
+        billPayments: [],
+        callLogs: [],
+        appointments: [],
+        leadRequests: leadOnlyResult.data.map((item: {
+          id: string;
+          reference_code: string;
+          lead_type: string;
+          message: string;
+          status: string;
+          created_at: string;
+        }) => ({
+          id: item.id,
+          referenceCode: item.reference_code,
+          type: item.lead_type,
+          message: item.message,
+          date: item.created_at,
+          status: item.status,
+        })),
+      };
+    }
+
     return getMockCustomerByPhone(phone);
   }
 

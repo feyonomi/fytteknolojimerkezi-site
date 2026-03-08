@@ -53,12 +53,20 @@ export async function POST(request: NextRequest) {
   const canonicalPhone = toCanonicalPhone(phone);
 
   const profileQuery = await supabase.from("profiles").select("id").eq("phone", canonicalPhone).limit(1).maybeSingle();
+  if (profileQuery.error) {
+    return NextResponse.json({ error: "Müşteri profili doğrulanamadı." }, { status: 500 });
+  }
+
   if (!profileQuery.data) {
-    await supabase.from("profiles").insert({
+    const profileInsert = await supabase.from("profiles").insert({
       full_name: fullName,
       phone: canonicalPhone,
       role: "customer",
     });
+
+    if (profileInsert.error) {
+      return NextResponse.json({ error: "Müşteri profili oluşturulamadı." }, { status: 500 });
+    }
   }
 
   const insert = await supabase.from("lead_requests").insert({
