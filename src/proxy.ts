@@ -10,7 +10,7 @@ const applySecurityHeaders = (response: NextResponse) => {
   response.headers.set("Cross-Origin-Resource-Policy", "same-site");
   response.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; img-src 'self' data: https://images.unsplash.com https://www.google.com https://maps.googleapis.com; script-src 'self' 'unsafe-inline' https://embed.tawk.to https://va.tawk.to; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://embed.tawk.to https://va.tawk.to; frame-src https://www.google.com https://maps.google.com; font-src 'self' data:; base-uri 'self'; form-action 'self';"
+    "default-src 'self'; img-src 'self' data: https://*.supabase.co https://images.unsplash.com https://www.google.com https://maps.googleapis.com; script-src 'self' 'unsafe-inline' https://embed.tawk.to https://va.tawk.to; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://embed.tawk.to https://va.tawk.to; frame-src https://www.google.com https://maps.google.com; font-src 'self' data:; base-uri 'self'; form-action 'self';"
   );
 
   return response;
