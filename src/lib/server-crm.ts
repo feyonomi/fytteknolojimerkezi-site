@@ -8,6 +8,14 @@ type SupabaseProfile = {
   phone: string;
 };
 
+export type RecentAppointment = {
+  id: string;
+  phone: string;
+  service: string;
+  appointmentAt: string;
+  status: string;
+};
+
 const buildPhoneVariants = (phone: string) => {
   const digits = phone.replace(/\D/g, "");
   const normalized = normalizePhone(phone);
@@ -318,4 +326,36 @@ async function ensureProfile(fullName: string, phone: string) {
       role: "customer",
     });
   }
+}
+
+export async function getRecentAppointments(limit = 15): Promise<RecentAppointment[]> {
+  const supabase = createAdminSupabaseClient();
+  if (!supabase) {
+    return [];
+  }
+
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(50, Math.floor(limit))) : 15;
+  const query = await supabase
+    .from("appointments")
+    .select("id, customer_phone, service_name, appointment_at, status")
+    .order("appointment_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (query.error || !query.data) {
+    return [];
+  }
+
+  return query.data.map((item: {
+    id: string;
+    customer_phone: string;
+    service_name: string;
+    appointment_at: string;
+    status: string;
+  }) => ({
+    id: item.id,
+    phone: item.customer_phone,
+    service: item.service_name,
+    appointmentAt: item.appointment_at,
+    status: item.status,
+  }));
 }

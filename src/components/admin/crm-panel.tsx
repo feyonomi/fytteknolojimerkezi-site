@@ -1,7 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CustomerRecord } from "@/types";
+
+type RecentAppointment = {
+  id: string;
+  phone: string;
+  service: string;
+  appointmentAt: string;
+  status: string;
+};
 
 export function CrmPanel() {
   const [phone, setPhone] = useState("");
@@ -10,6 +18,25 @@ export function CrmPanel() {
   const [callSummary, setCallSummary] = useState("");
   const [staffName, setStaffName] = useState("Admin Personel");
   const [message, setMessage] = useState("");
+  const [recentAppointments, setRecentAppointments] = useState<RecentAppointment[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
+
+  const loadRecentAppointments = async () => {
+    setLoadingAppointments(true);
+    const response = await fetch("/api/admin/appointments", { cache: "no-store" });
+    const result = await response.json();
+    setLoadingAppointments(false);
+
+    if (!response.ok) {
+      return;
+    }
+
+    setRecentAppointments(Array.isArray(result.appointments) ? result.appointments : []);
+  };
+
+  useEffect(() => {
+    loadRecentAppointments();
+  }, []);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -67,6 +94,31 @@ export function CrmPanel() {
           </button>
         </div>
         {message && <p className="mt-3 text-sm text-accent">{message}</p>}
+      </div>
+
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-lg font-semibold">Son Randevular</h3>
+          <button className="btn-secondary text-sm" type="button" onClick={loadRecentAppointments}>
+            {loadingAppointments ? "Yükleniyor..." : "Yenile"}
+          </button>
+        </div>
+
+        {recentAppointments.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">Henüz kayıtlı randevu görünmüyor.</p>
+        ) : (
+          <ul className="mt-3 space-y-2 text-sm">
+            {recentAppointments.map((appointment) => (
+              <li key={appointment.id} className="rounded-lg border p-3">
+                <p className="font-medium">{appointment.service}</p>
+                <p className="text-xs text-muted">
+                  {new Date(appointment.appointmentAt).toLocaleString("tr-TR")} • {appointment.status}
+                </p>
+                <p className="mt-1 text-xs text-muted">Telefon: {appointment.phone}</p>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {customer && (
