@@ -134,6 +134,12 @@ export function ProductManager() {
         return;
       }
 
+      if (!uploadResult?.url) {
+        setSaving(false);
+        setMessage("Görsel URL alınamadı. Lütfen tekrar deneyin.");
+        return;
+      }
+
       finalImageUrl = String(uploadResult.url || "");
     }
 

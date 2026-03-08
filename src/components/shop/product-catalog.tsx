@@ -132,26 +132,26 @@ export function ProductCatalog() {
         </div>
       )}
 
-      <div className="grid-auto">
+      <div className="grid-auto items-stretch">
         {filtered.map((item) => (
-          <article key={item.id} className="glass-card p-5">
+          <article key={item.id} className="glass-card flex h-full flex-col p-5">
             {item.imageUrl ? (
               <img
                 src={item.imageUrl}
                 alt={item.name}
                 loading="lazy"
-                className="mb-3 h-36 w-full rounded-lg object-cover"
+                className="mb-3 aspect-[16/9] w-full rounded-lg object-cover"
               />
             ) : (
-              <div className="mb-3 flex h-36 w-full items-center justify-center rounded-lg border bg-[linear-gradient(140deg,#0b2f51,#08344b,#153f66)] text-xs text-muted">
+              <div className="mb-3 flex aspect-[16/9] w-full items-center justify-center rounded-lg border bg-[linear-gradient(140deg,#0b2f51,#08344b,#153f66)] text-xs text-muted">
                 Görsel Eklenmedi
               </div>
             )}
             <p className="text-xs text-muted">{item.category} • {item.condition}</p>
-            <h3 className="mt-1 font-semibold">{item.name}</h3>
-            <p className="mt-3 text-xl font-bold">₺{item.price.toLocaleString("tr-TR")}</p>
+            <h3 className="mt-1 min-h-[3rem] font-semibold">{item.name}</h3>
+            <p className="mt-2 text-xl font-bold">₺{item.price.toLocaleString("tr-TR")}</p>
             <a
-              className="btn-primary mt-4 inline-flex text-sm"
+              className="btn-primary mt-auto inline-flex text-sm"
               href={`https://wa.me/905412991923?text=${encodeURIComponent(`${item.name} için teklif almak istiyorum.`)}`}
               target="_blank"
               rel="noreferrer"

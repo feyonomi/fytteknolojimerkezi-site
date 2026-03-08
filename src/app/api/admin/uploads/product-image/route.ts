@@ -78,10 +78,11 @@ export async function POST(request: Request) {
     return ext ? mimeByExt[ext] : undefined;
   })();
 
-  const mimeType = file.type || fallbackMime || "";
+  const normalizedType = file.type.toLowerCase();
+  const mimeType = ALLOWED_TYPES.has(normalizedType) ? normalizedType : fallbackMime || "";
 
   if (!ALLOWED_TYPES.has(mimeType)) {
-    return NextResponse.json({ error: "Sadece JPG, PNG, WEBP veya GIF yükleyebilirsiniz." }, { status: 400 });
+    return NextResponse.json({ error: "Sadece JPG, PNG, WEBP, GIF, HEIC veya HEIF yükleyebilirsiniz." }, { status: 400 });
   }
 
   if (file.size > MAX_FILE_SIZE) {

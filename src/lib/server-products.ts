@@ -6,10 +6,12 @@ type ProductRow = {
   name: string;
   category: ProductItem["category"];
   condition: ProductItem["condition"];
-  price: number;
-  image_url: string | null;
-  popular: boolean;
-  is_active: boolean;
+  price: number | string;
+  image_url?: string | null;
+  image?: string | null;
+  imageUrl?: string | null;
+  popular?: boolean | null;
+  is_active?: boolean | null;
 };
 
 export type AdminProductItem = ProductItem & {
@@ -32,10 +34,77 @@ const mapProductRow = (item: ProductRow): AdminProductItem => ({
   category: item.category,
   condition: item.condition,
   price: Number(item.price),
-  imageUrl: item.image_url,
-  popular: item.popular,
-  isActive: item.is_active,
+  imageUrl: item.image_url ?? item.image ?? item.imageUrl ?? null,
+  popular: Boolean(item.popular ?? false),
+  isActive: item.is_active ?? true,
 });
+
+const PRODUCT_SELECT_VARIANTS = [
+  "id, name, category, condition, price, image_url, popular, is_active",
+  "id, name, category, condition, price, image, popular, is_active",
+  "id, name, category, condition, price, \"imageUrl\", popular, is_active",
+  "id, name, category, condition, price, image_url",
+  "id, name, category, condition, price, image",
+  "id, name, category, condition, price, \"imageUrl\"",
+  "id, name, category, condition, price, popular, is_active",
+  "id, name, category, condition, price",
+] as const;
+
+async function fetchProductRows(
+  supabase: NonNullable<ReturnType<typeof createAdminSupabaseClient>>,
+  activeOnly: boolean
+): Promise<ProductRow[]> {
+  for (const variant of PRODUCT_SELECT_VARIANTS) {
+    let query: any = supabase.from("products").select(variant as string);
+    if (activeOnly && variant.includes("is_active")) {
+      query = query.eq("is_active", true);
+    }
+
+    const result: any = await query.order("created_at", { ascending: false });
+    if (!result.error && Array.isArray(result.data)) {
+      return result.data as ProductRow[];
+    }
+  }
+
+  return [];
+}
+
+async function applyOptionalProductFields(
+  supabase: NonNullable<ReturnType<typeof createAdminSupabaseClient>>,
+  id: string,
+  input: CreateProductInput
+) {
+  const imageValue = input.imageUrl ?? null;
+  const popular = Boolean(input.popular);
+  const isActive = input.isActive ?? true;
+
+  const payloads: Array<Record<string, unknown>> = [
+    { image_url: imageValue, popular, is_active: isActive },
+    { image: imageValue, popular, is_active: isActive },
+    { imageUrl: imageValue, popular, is_active: isActive },
+    { image_url: imageValue, popular },
+    { image: imageValue, popular },
+    { imageUrl: imageValue, popular },
+    { image_url: imageValue, is_active: isActive },
+    { image: imageValue, is_active: isActive },
+    { imageUrl: imageValue, is_active: isActive },
+    { image_url: imageValue },
+    { image: imageValue },
+    { imageUrl: imageValue },
+    { popular, is_active: isActive },
+    { popular },
+    { is_active: isActive },
+  ];
+
+  for (const payload of payloads) {
+    const result = await supabase.from("products").update(payload).eq("id", id);
+    if (!result.error) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 export async function getProducts(): Promise<ProductItem[]> {
   const supabase = createAdminSupabaseClient();
@@ -43,96 +112,23 @@ export async function getProducts(): Promise<ProductItem[]> {
     return [];
   }
 
-  const query = await supabase
-    .from("products")
-    .select("id, name, category, condition, price, image_url, popular, is_active")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-
-  if (!query.error && query.data) {
-    return (query.data as ProductRow[]).map((item) => {
-      const mapped = mapProductRow(item);
-      return {
-        id: mapped.id,
-        name: mapped.name,
-        category: mapped.category,
-        condition: mapped.condition,
-        price: mapped.price,
-        imageUrl: mapped.imageUrl,
-        popular: mapped.popular,
-      };
-    });
-  }
-
-  const fallbackQuery = await supabase
-    .from("products")
-    .select("id, name, category, condition, price, popular, is_active")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-
-  if (!fallbackQuery.error && fallbackQuery.data) {
-    return (fallbackQuery.data as Omit<ProductRow, "image_url">[]).map((item) => {
-      const mapped = mapProductRow({ ...item, image_url: null });
-      return {
-        id: mapped.id,
-        name: mapped.name,
-        category: mapped.category,
-        condition: mapped.condition,
-        price: mapped.price,
-        imageUrl: mapped.imageUrl,
-        popular: mapped.popular,
-      };
-    });
-  }
-
-  const legacyWithImage = await supabase
-    .from("products")
-    .select("id, name, category, condition, price, image_url")
-    .order("created_at", { ascending: false });
-
-  if (!legacyWithImage.error && legacyWithImage.data) {
-    return (legacyWithImage.data as Array<{
-      id: string;
-      name: string;
-      category: ProductItem["category"];
-      condition: ProductItem["condition"];
-      price: number;
-      image_url: string | null;
-    }>).map((item) => ({
-      id: item.id,
-      name: item.name,
-      category: item.category,
-      condition: item.condition,
-      price: Number(item.price),
-      imageUrl: item.image_url,
-      popular: false,
-    }));
-  }
-
-  const legacyQuery = await supabase
-    .from("products")
-    .select("id, name, category, condition, price")
-    .order("created_at", { ascending: false });
-
-  if (legacyQuery.error || !legacyQuery.data) {
+  const rows = await fetchProductRows(supabase, true);
+  if (rows.length === 0) {
     return [];
   }
 
-  return (legacyQuery.data as Array<{
-    id: string;
-    name: string;
-    category: ProductItem["category"];
-    condition: ProductItem["condition"];
-    price: number;
-  }>).map((item) => ({
-    id: item.id,
-    name: item.name,
-    category: item.category,
-    condition: item.condition,
-    price: Number(item.price),
-    imageUrl: null,
-    popular: false,
-  }));
+  return rows.map((item) => {
+    const mapped = mapProductRow(item);
+    return {
+      id: mapped.id,
+      name: mapped.name,
+      category: mapped.category,
+      condition: mapped.condition,
+      price: mapped.price,
+      imageUrl: mapped.imageUrl,
+      popular: mapped.popular,
+    };
+  });
 }
 
 export async function getAdminProducts(): Promise<AdminProductItem[]> {
@@ -141,44 +137,12 @@ export async function getAdminProducts(): Promise<AdminProductItem[]> {
     return [];
   }
 
-  const query = await supabase
-    .from("products")
-    .select("id, name, category, condition, price, image_url, popular, is_active")
-    .order("created_at", { ascending: false });
-
-  if (query.error) {
-    const fallbackQuery = await supabase
-      .from("products")
-      .select("id, name, category, condition, price")
-      .order("created_at", { ascending: false });
-
-    if (fallbackQuery.error || !fallbackQuery.data) {
-      return [];
-    }
-
-    return (fallbackQuery.data as Array<{
-      id: string;
-      name: string;
-      category: ProductItem["category"];
-      condition: ProductItem["condition"];
-      price: number;
-    }>).map((item) => ({
-      id: item.id,
-      name: item.name,
-      category: item.category,
-      condition: item.condition,
-      price: Number(item.price),
-      imageUrl: null,
-      popular: false,
-      isActive: true,
-    }));
-  }
-
-  if (!query.data) {
+  const rows = await fetchProductRows(supabase, false);
+  if (rows.length === 0) {
     return [];
   }
 
-  return (query.data as ProductRow[]).map(mapProductRow);
+  return rows.map(mapProductRow);
 }
 
 export async function createProduct(input: CreateProductInput) {
@@ -221,14 +185,7 @@ export async function createProduct(input: CreateProductInput) {
       return { product: null, error: "Ürün kaydedilemedi." };
     }
 
-    await supabase
-      .from("products")
-      .update({
-        image_url: input.imageUrl || null,
-        popular: Boolean(input.popular),
-        is_active: input.isActive ?? true,
-      })
-      .eq("id", fallbackInsert.data.id);
+    await applyOptionalProductFields(supabase, fallbackInsert.data.id, input);
 
     return {
       product: {
@@ -237,9 +194,9 @@ export async function createProduct(input: CreateProductInput) {
         category: fallbackInsert.data.category,
         condition: fallbackInsert.data.condition,
         price: Number(fallbackInsert.data.price),
-        imageUrl: null,
-        popular: false,
-        isActive: true,
+        imageUrl: input.imageUrl || null,
+        popular: Boolean(input.popular),
+        isActive: input.isActive ?? true,
       },
     };
   }
@@ -293,14 +250,7 @@ export async function updateProduct(id: string, input: CreateProductInput) {
       return { product: null, error: "Ürün güncellenemedi." };
     }
 
-    await supabase
-      .from("products")
-      .update({
-        image_url: input.imageUrl || null,
-        popular: Boolean(input.popular),
-        is_active: input.isActive ?? true,
-      })
-      .eq("id", id);
+    await applyOptionalProductFields(supabase, id, input);
 
     return {
       product: {
