@@ -47,7 +47,7 @@ export function ProductCatalog() {
         const searchMatch = item.name.toLowerCase().includes(search.toLowerCase());
         return categoryMatch && conditionMatch && searchMatch;
       }),
-    [category, condition, search]
+    [products, category, condition, search]
   );
 
   const categoryOptions = useMemo(
