@@ -78,32 +78,28 @@ async function applyOptionalProductFields(
   const popular = Boolean(input.popular);
   const isActive = input.isActive ?? true;
 
-  const payloads: Array<Record<string, unknown>> = [
-    { image_url: imageValue, popular, is_active: isActive },
-    { image: imageValue, popular, is_active: isActive },
-    { imageUrl: imageValue, popular, is_active: isActive },
-    { image_url: imageValue, popular },
-    { image: imageValue, popular },
-    { imageUrl: imageValue, popular },
-    { image_url: imageValue, is_active: isActive },
-    { image: imageValue, is_active: isActive },
-    { imageUrl: imageValue, is_active: isActive },
-    { image_url: imageValue },
-    { image: imageValue },
-    { imageUrl: imageValue },
-    { popular, is_active: isActive },
-    { popular },
-    { is_active: isActive },
-  ];
+  let imageStored = imageValue === null;
 
-  for (const payload of payloads) {
-    const result = await supabase.from("products").update(payload).eq("id", id);
-    if (!result.error) {
-      return true;
+  if (imageValue !== null) {
+    const imagePayloads: Array<Record<string, unknown>> = [{ image_url: imageValue }, { image: imageValue }, { imageUrl: imageValue }];
+    for (const payload of imagePayloads) {
+      const result = await supabase.from("products").update(payload).eq("id", id);
+      if (!result.error) {
+        imageStored = true;
+        break;
+      }
     }
   }
 
-  return false;
+  const statePayloads: Array<Record<string, unknown>> = [{ popular, is_active: isActive }, { popular }, { is_active: isActive }];
+  for (const payload of statePayloads) {
+    const result = await supabase.from("products").update(payload).eq("id", id);
+    if (!result.error) {
+      break;
+    }
+  }
+
+  return { imageStored };
 }
 
 export async function getProducts(): Promise<ProductItem[]> {
@@ -185,7 +181,13 @@ export async function createProduct(input: CreateProductInput) {
       return { product: null, error: "Ürün kaydedilemedi." };
     }
 
-    await applyOptionalProductFields(supabase, fallbackInsert.data.id, input);
+    const optionalResult = await applyOptionalProductFields(supabase, fallbackInsert.data.id, input);
+    if (input.imageUrl && !optionalResult.imageStored) {
+      return {
+        product: null,
+        error: "Ürün tablosunda görsel kolonu eksik. Supabase SQL Editor'da: alter table products add column if not exists image_url text; komutunu çalıştırın.",
+      };
+    }
 
     return {
       product: {
@@ -250,7 +252,13 @@ export async function updateProduct(id: string, input: CreateProductInput) {
       return { product: null, error: "Ürün güncellenemedi." };
     }
 
-    await applyOptionalProductFields(supabase, id, input);
+    const optionalResult = await applyOptionalProductFields(supabase, id, input);
+    if (input.imageUrl && !optionalResult.imageStored) {
+      return {
+        product: null,
+        error: "Ürün tablosunda görsel kolonu eksik. Supabase SQL Editor'da: alter table products add column if not exists image_url text; komutunu çalıştırın.",
+      };
+    }
 
     return {
       product: {
