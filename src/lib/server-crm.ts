@@ -16,6 +16,16 @@ export type RecentAppointment = {
   status: string;
 };
 
+export type RecentSecondHandLead = {
+  id: string;
+  referenceCode: string;
+  fullName: string;
+  phone: string;
+  message: string;
+  status: string;
+  createdAt: string;
+};
+
 const buildPhoneVariants = (phone: string) => {
   const digits = phone.replace(/\D/g, "");
   const normalized = normalizePhone(phone);
@@ -81,8 +91,9 @@ export async function findCustomerRecord(phone: string): Promise<CustomerRecord 
   const profile = profileQuery.data as SupabaseProfile;
   const relatedPhoneVariants = Array.from(new Set([...variants, ...buildPhoneVariants(profile.phone)]));
   const relatedPhoneFilter = buildPhoneFilter("customer_phone", relatedPhoneVariants);
+  const relatedLeadPhoneFilter = buildPhoneFilter("phone", relatedPhoneVariants);
 
-  const [repairsResult, purchasesResult, billResult, callResult, appointmentResult, noteResult] = await Promise.all([
+  const [repairsResult, purchasesResult, billResult, callResult, appointmentResult, noteResult, leadResult] = await Promise.all([
     supabase
       .from("service_orders")
       .select("id, device, issue, status, created_at, warranty_end")
@@ -112,6 +123,11 @@ export async function findCustomerRecord(phone: string): Promise<CustomerRecord 
       .from("staff_notes")
       .select("id, note, created_at")
       .or(relatedPhoneFilter)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("lead_requests")
+      .select("id, reference_code, lead_type, message, status, created_at")
+      .or(relatedLeadPhoneFilter)
       .order("created_at", { ascending: false }),
   ]);
 
@@ -159,6 +175,16 @@ export async function findCustomerRecord(phone: string): Promise<CustomerRecord 
         id: item.id,
         service: item.service_name,
         date: item.appointment_at,
+        status: item.status,
+      })
+    ),
+    leadRequests: (leadResult.data || []).map(
+      (item: { id: string; reference_code: string; lead_type: string; message: string; status: string; created_at: string }) => ({
+        id: item.id,
+        referenceCode: item.reference_code,
+        type: item.lead_type,
+        message: item.message,
+        date: item.created_at,
         status: item.status,
       })
     ),
@@ -357,5 +383,42 @@ export async function getRecentAppointments(limit = 15): Promise<RecentAppointme
     service: item.service_name,
     appointmentAt: item.appointment_at,
     status: item.status,
+  }));
+}
+
+export async function getRecentSecondHandLeads(limit = 20): Promise<RecentSecondHandLead[]> {
+  const supabase = createAdminSupabaseClient();
+  if (!supabase) {
+    return [];
+  }
+
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(50, Math.floor(limit))) : 20;
+  const query = await supabase
+    .from("lead_requests")
+    .select("id, reference_code, full_name, phone, message, status, created_at")
+    .eq("lead_type", "second_hand")
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (query.error || !query.data) {
+    return [];
+  }
+
+  return query.data.map((item: {
+    id: string;
+    reference_code: string;
+    full_name: string;
+    phone: string;
+    message: string;
+    status: string;
+    created_at: string;
+  }) => ({
+    id: item.id,
+    referenceCode: item.reference_code,
+    fullName: item.full_name,
+    phone: item.phone,
+    message: item.message,
+    status: item.status,
+    createdAt: item.created_at,
   }));
 }

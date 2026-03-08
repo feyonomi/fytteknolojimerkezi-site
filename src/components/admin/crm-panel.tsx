@@ -11,6 +11,16 @@ type RecentAppointment = {
   status: string;
 };
 
+type RecentSecondHandLead = {
+  id: string;
+  referenceCode: string;
+  fullName: string;
+  phone: string;
+  message: string;
+  status: string;
+  createdAt: string;
+};
+
 export function CrmPanel() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,6 +30,8 @@ export function CrmPanel() {
   const [message, setMessage] = useState("");
   const [recentAppointments, setRecentAppointments] = useState<RecentAppointment[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [recentSecondHandLeads, setRecentSecondHandLeads] = useState<RecentSecondHandLead[]>([]);
+  const [loadingSecondHandLeads, setLoadingSecondHandLeads] = useState(false);
 
   const loadRecentAppointments = async () => {
     setLoadingAppointments(true);
@@ -34,8 +46,22 @@ export function CrmPanel() {
     setRecentAppointments(Array.isArray(result.appointments) ? result.appointments : []);
   };
 
+  const loadRecentSecondHandLeads = async () => {
+    setLoadingSecondHandLeads(true);
+    const response = await fetch("/api/admin/second-hand-leads", { cache: "no-store" });
+    const result = await response.json();
+    setLoadingSecondHandLeads(false);
+
+    if (!response.ok) {
+      return;
+    }
+
+    setRecentSecondHandLeads(Array.isArray(result.leads) ? result.leads : []);
+  };
+
   useEffect(() => {
     loadRecentAppointments();
+    loadRecentSecondHandLeads();
   }, []);
 
   const handleSearch = async () => {
@@ -121,6 +147,30 @@ export function CrmPanel() {
         )}
       </div>
 
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-lg font-semibold">Son 2. El Satış Talepleri</h3>
+          <button className="btn-secondary text-sm" type="button" onClick={loadRecentSecondHandLeads}>
+            {loadingSecondHandLeads ? "Yükleniyor..." : "Yenile"}
+          </button>
+        </div>
+
+        {recentSecondHandLeads.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">Henüz 2. el satış talebi görünmüyor.</p>
+        ) : (
+          <ul className="mt-3 space-y-2 text-sm">
+            {recentSecondHandLeads.map((lead) => (
+              <li key={lead.id} className="rounded-lg border p-3">
+                <p className="font-medium">{lead.fullName} • {lead.referenceCode}</p>
+                <p className="text-xs text-muted">{new Date(lead.createdAt).toLocaleString("tr-TR")} • {lead.status}</p>
+                <p className="mt-1 text-xs text-muted">Telefon: {lead.phone}</p>
+                <p className="mt-1 text-xs text-muted">{lead.message}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {customer && (
         <div className="grid gap-4 lg:grid-cols-2">
           <article className="glass-card p-5 lg:col-span-2">
@@ -183,6 +233,19 @@ export function CrmPanel() {
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
               {customer.notes.map((note) => (
                 <li key={note}>{note}</li>
+              ))}
+            </ul>
+          </article>
+
+          <article className="glass-card p-5">
+            <h4 className="font-semibold">2. El Satış Talepleri</h4>
+            <ul className="mt-3 space-y-2 text-sm">
+              {(customer.leadRequests || []).filter((item) => item.type === "second_hand").map((lead) => (
+                <li key={lead.id} className="rounded-lg border p-2">
+                  <p className="font-medium">{lead.referenceCode}</p>
+                  <p className="text-xs text-muted">{new Date(lead.date).toLocaleString("tr-TR")} • {lead.status}</p>
+                  <p className="mt-1 text-xs text-muted">{lead.message}</p>
+                </li>
               ))}
             </ul>
           </article>

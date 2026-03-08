@@ -47,4 +47,5 @@ export type CustomerRecord = {
   billPayments: Array<{ id: string; type: string; amount: number; date: string }>;
   callLogs: Array<{ id: string; date: string; summary: string; staff: string }>;
   appointments: Array<{ id: string; service: string; date: string; status: string }>;
+  leadRequests?: Array<{ id: string; referenceCode: string; type: string; message: string; date: string; status: string }>;
 };
