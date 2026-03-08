@@ -8,9 +8,49 @@ type SupabaseProfile = {
   phone: string;
 };
 
-export async function findCustomerRecord(phone: string): Promise<CustomerRecord | null> {
+const buildPhoneVariants = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
   const normalized = normalizePhone(phone);
-  if (!normalized) {
+  const variants = new Set<string>();
+
+  if (digits) {
+    variants.add(digits);
+  }
+
+  if (normalized) {
+    variants.add(normalized);
+    variants.add(`0${normalized}`);
+    variants.add(`90${normalized}`);
+  }
+
+  if (digits.length === 11 && digits.startsWith("0")) {
+    variants.add(digits.slice(1));
+    variants.add(`90${digits.slice(1)}`);
+  }
+
+  if (digits.length === 12 && digits.startsWith("90")) {
+    variants.add(digits.slice(2));
+    variants.add(`0${digits.slice(2)}`);
+  }
+
+  return [...variants].filter(Boolean);
+};
+
+const buildPhoneFilter = (field: "phone" | "customer_phone", variants: string[]) =>
+  variants.map((value) => `${field}.eq.${value}`).join(",");
+
+const toCanonicalPhone = (phone: string) => {
+  const normalized = normalizePhone(phone);
+  if (normalized) {
+    return `0${normalized}`;
+  }
+
+  return phone.replace(/\D/g, "");
+};
+
+export async function findCustomerRecord(phone: string): Promise<CustomerRecord | null> {
+  const variants = buildPhoneVariants(phone);
+  if (variants.length === 0) {
     return null;
   }
 
@@ -19,11 +59,10 @@ export async function findCustomerRecord(phone: string): Promise<CustomerRecord 
     return getMockCustomerByPhone(phone);
   }
 
-  const queryPhone = phone.replace(/\D/g, "");
   const profileQuery = await supabase
     .from("profiles")
     .select("id, full_name, phone")
-    .or(`phone.eq.${queryPhone},phone.eq.${normalized},phone.eq.0${normalized}`)
+    .or(buildPhoneFilter("phone", variants))
     .limit(1)
     .maybeSingle();
 
@@ -32,36 +71,39 @@ export async function findCustomerRecord(phone: string): Promise<CustomerRecord 
   }
 
   const profile = profileQuery.data as SupabaseProfile;
+  const relatedPhoneVariants = Array.from(new Set([...variants, ...buildPhoneVariants(profile.phone)]));
+  const relatedPhoneFilter = buildPhoneFilter("customer_phone", relatedPhoneVariants);
+
   const [repairsResult, purchasesResult, billResult, callResult, appointmentResult, noteResult] = await Promise.all([
     supabase
       .from("service_orders")
       .select("id, device, issue, status, created_at, warranty_end")
-      .eq("customer_phone", profile.phone)
+      .or(relatedPhoneFilter)
       .order("created_at", { ascending: false }),
     supabase
       .from("sales")
       .select("id, product_name, created_at, warranty_end")
-      .eq("customer_phone", profile.phone)
+      .or(relatedPhoneFilter)
       .order("created_at", { ascending: false }),
     supabase
       .from("bill_payments")
       .select("id, bill_type, amount, created_at")
-      .eq("customer_phone", profile.phone)
+      .or(relatedPhoneFilter)
       .order("created_at", { ascending: false }),
     supabase
       .from("call_logs")
       .select("id, summary, staff_name, created_at")
-      .eq("customer_phone", profile.phone)
+      .or(relatedPhoneFilter)
       .order("created_at", { ascending: false }),
     supabase
       .from("appointments")
       .select("id, service_name, appointment_at, status")
-      .eq("customer_phone", profile.phone)
+      .or(relatedPhoneFilter)
       .order("appointment_at", { ascending: false }),
     supabase
       .from("staff_notes")
       .select("id, note, created_at")
-      .eq("customer_phone", profile.phone)
+      .or(relatedPhoneFilter)
       .order("created_at", { ascending: false }),
   ]);
 
@@ -152,13 +194,15 @@ export async function createAppointment(payload: {
 }) {
   const supabase = createAdminSupabaseClient();
   if (!supabase) {
-    return { success: true };
+    return { success: false, error: "Veritabanı bağlantısı yapılandırılmamış." };
   }
 
-  await ensureProfile(payload.fullName, payload.phone);
+  const canonicalPhone = toCanonicalPhone(payload.phone);
+
+  await ensureProfile(payload.fullName, canonicalPhone);
 
   const result = await supabase.from("appointments").insert({
-    customer_phone: payload.phone,
+    customer_phone: canonicalPhone,
     service_name: payload.service,
     appointment_at: payload.appointmentAt,
     status: "Beklemede",
@@ -182,10 +226,12 @@ export async function createServiceOrder(payload: {
     return { success: true, trackingCode };
   }
 
-  await ensureProfile(payload.fullName, payload.phone);
+  const canonicalPhone = toCanonicalPhone(payload.phone);
+
+  await ensureProfile(payload.fullName, canonicalPhone);
 
   const result = await supabase.from("service_orders").insert({
-    customer_phone: payload.phone,
+    customer_phone: canonicalPhone,
     device: payload.device,
     issue: payload.issue,
     status: "Kayıt Alındı",
@@ -236,10 +282,12 @@ export async function createBillPayment(payload: {
     return { success: true };
   }
 
-  await ensureProfile(payload.fullName, payload.phone);
+  const canonicalPhone = toCanonicalPhone(payload.phone);
+
+  await ensureProfile(payload.fullName, canonicalPhone);
 
   const result = await supabase.from("bill_payments").insert({
-    customer_phone: payload.phone,
+    customer_phone: canonicalPhone,
     bill_type: payload.billType,
     institution: payload.institution,
     amount: payload.amount,
@@ -255,12 +303,18 @@ async function ensureProfile(fullName: string, phone: string) {
     return;
   }
 
-  const profile = await supabase.from("profiles").select("id").eq("phone", phone).limit(1).maybeSingle();
+  const variants = buildPhoneVariants(phone);
+  const profile = await supabase
+    .from("profiles")
+    .select("id")
+    .or(buildPhoneFilter("phone", variants))
+    .limit(1)
+    .maybeSingle();
 
   if (!profile.data) {
     await supabase.from("profiles").insert({
       full_name: fullName,
-      phone,
+      phone: toCanonicalPhone(phone),
       role: "customer",
     });
   }
