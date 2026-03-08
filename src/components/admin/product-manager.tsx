@@ -239,7 +239,7 @@ export function ProductManager() {
           className="rounded-lg border bg-transparent px-3 py-2 text-sm md:col-span-2"
           onChange={(event) => setImageFile(event.target.files?.[0] || null)}
           type="file"
-          accept="image/png,image/jpeg,image/webp,image/gif"
+          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/heic,image/heif"
         />
 
         <label className="flex items-center gap-2 text-sm">
