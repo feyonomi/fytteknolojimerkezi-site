@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { ProductItem } from "@/types";
 import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS, PRODUCT_NAME_SUGGESTIONS } from "@/data/product-options";
 
@@ -22,8 +22,10 @@ export function ProductManager() {
   const [condition, setCondition] = useState<ProductItem["condition"]>("Yeni");
   const [price, setPrice] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [popular, setPopular] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -52,8 +54,12 @@ export function ProductManager() {
     setCondition("Yeni");
     setPrice("");
     setImageUrl("");
+    setImageFile(null);
     setPopular(false);
     setIsActive(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -61,6 +67,28 @@ export function ProductManager() {
 
     setSaving(true);
     setMessage("");
+
+    let finalImageUrl = imageUrl.trim();
+
+    if (imageFile) {
+      setMessage("Görsel yükleniyor...");
+      const uploadForm = new FormData();
+      uploadForm.append("file", imageFile);
+
+      const uploadResponse = await fetch("/api/admin/uploads/product-image", {
+        method: "POST",
+        body: uploadForm,
+      });
+
+      const uploadResult = await uploadResponse.json();
+      if (!uploadResponse.ok) {
+        setSaving(false);
+        setMessage(uploadResult.error || "Görsel yüklenemedi.");
+        return;
+      }
+
+      finalImageUrl = String(uploadResult.url || "");
+    }
 
     const response = await fetch("/api/admin/products", {
       method: "POST",
@@ -70,7 +98,7 @@ export function ProductManager() {
         category,
         condition,
         price,
-        imageUrl,
+        imageUrl: finalImageUrl,
         popular,
         isActive,
       }),
@@ -150,6 +178,14 @@ export function ProductManager() {
           onChange={(event) => setImageUrl(event.target.value)}
           placeholder="Ürün görsel URL (opsiyonel)"
           type="url"
+        />
+
+        <input
+          ref={fileInputRef}
+          className="rounded-lg border bg-transparent px-3 py-2 text-sm md:col-span-2"
+          onChange={(event) => setImageFile(event.target.files?.[0] || null)}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
         />
 
         <label className="flex items-center gap-2 text-sm">
