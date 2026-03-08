@@ -250,3 +250,90 @@ export async function createProduct(input: CreateProductInput) {
 
   return { product: mapProductRow(insertResult.data as ProductRow) };
 }
+
+export async function updateProduct(id: string, input: CreateProductInput) {
+  const supabase = createAdminSupabaseClient();
+  if (!supabase) {
+    return { product: null, error: "Veritabanı bağlantısı bulunamadı." };
+  }
+
+  const updateResult = await supabase
+    .from("products")
+    .update({
+      name: input.name,
+      category: input.category,
+      condition: input.condition,
+      price: input.price,
+      image_url: input.imageUrl || null,
+      popular: Boolean(input.popular),
+      is_active: input.isActive ?? true,
+    })
+    .eq("id", id)
+    .select("id, name, category, condition, price, image_url, popular, is_active")
+    .single();
+
+  if (updateResult.error) {
+    const fallbackUpdate = await supabase
+      .from("products")
+      .update({
+        name: input.name,
+        category: input.category,
+        condition: input.condition,
+        price: input.price,
+      })
+      .eq("id", id)
+      .select("id, name, category, condition, price")
+      .single();
+
+    if (fallbackUpdate.error) {
+      return { product: null, error: fallbackUpdate.error.message || updateResult.error.message, code: fallbackUpdate.error.code || updateResult.error.code };
+    }
+
+    if (!fallbackUpdate.data) {
+      return { product: null, error: "Ürün güncellenemedi." };
+    }
+
+    await supabase
+      .from("products")
+      .update({
+        image_url: input.imageUrl || null,
+        popular: Boolean(input.popular),
+        is_active: input.isActive ?? true,
+      })
+      .eq("id", id);
+
+    return {
+      product: {
+        id: fallbackUpdate.data.id,
+        name: fallbackUpdate.data.name,
+        category: fallbackUpdate.data.category,
+        condition: fallbackUpdate.data.condition,
+        price: Number(fallbackUpdate.data.price),
+        imageUrl: input.imageUrl || null,
+        popular: Boolean(input.popular),
+        isActive: input.isActive ?? true,
+      },
+    };
+  }
+
+  if (!updateResult.data) {
+    return { product: null, error: "Ürün güncellenemedi." };
+  }
+
+  return { product: mapProductRow(updateResult.data as ProductRow) };
+}
+
+export async function deleteProduct(id: string) {
+  const supabase = createAdminSupabaseClient();
+  if (!supabase) {
+    return { success: false, error: "Veritabanı bağlantısı bulunamadı." };
+  }
+
+  const removeResult = await supabase.from("products").delete().eq("id", id);
+
+  if (removeResult.error) {
+    return { success: false, error: removeResult.error.message };
+  }
+
+  return { success: true };
+}

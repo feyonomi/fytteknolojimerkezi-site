@@ -15,6 +15,8 @@ export function ProductManager() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
   const [name, setName] = useState("");
@@ -57,9 +59,54 @@ export function ProductManager() {
     setImageFile(null);
     setPopular(false);
     setIsActive(true);
+    setEditingId(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handleEditStart = (product: AdminProduct) => {
+    setEditingId(product.id);
+    setName(product.name);
+    setCategory(product.category);
+    setCondition(product.condition);
+    setPrice(String(product.price));
+    setImageUrl(product.imageUrl || "");
+    setImageFile(null);
+    setPopular(Boolean(product.popular));
+    setIsActive(Boolean(product.isActive));
+    setMessage("Düzenleme modundasınız.");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDelete = async (product: AdminProduct) => {
+    const ok = window.confirm(`${product.name} ürününü silmek istediğinize emin misiniz?`);
+    if (!ok) {
+      return;
+    }
+
+    setDeletingId(product.id);
+    setMessage("");
+
+    const response = await fetch(`/api/admin/products/${product.id}`, {
+      method: "DELETE",
+    });
+    const result = await response.json();
+
+    setDeletingId(null);
+
+    if (!response.ok) {
+      setMessage(result.error || "Ürün silinemedi.");
+      return;
+    }
+
+    setProducts((prev) => prev.filter((item) => item.id !== product.id));
+    if (editingId === product.id) {
+      resetForm();
+    }
+    setMessage(result.message || "Ürün silindi.");
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -90,8 +137,9 @@ export function ProductManager() {
       finalImageUrl = String(uploadResult.url || "");
     }
 
-    const response = await fetch("/api/admin/products", {
-      method: "POST",
+    const isEditing = Boolean(editingId);
+    const response = await fetch(isEditing ? `/api/admin/products/${editingId}` : "/api/admin/products", {
+      method: isEditing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
@@ -112,8 +160,14 @@ export function ProductManager() {
       return;
     }
 
-    setProducts((prev) => [result.product as AdminProduct, ...prev]);
-    setMessage(result.message || "Ürün başarıyla eklendi.");
+    if (isEditing) {
+      setProducts((prev) => prev.map((item) => (item.id === editingId ? (result.product as AdminProduct) : item)));
+      setMessage(result.message || "Ürün güncellendi.");
+    } else {
+      setProducts((prev) => [result.product as AdminProduct, ...prev]);
+      setMessage(result.message || "Ürün başarıyla eklendi.");
+    }
+
     resetForm();
   };
 
@@ -198,9 +252,16 @@ export function ProductManager() {
           Ürün aktif olsun
         </label>
 
-        <button className="btn-primary md:col-span-2" type="submit" disabled={saving}>
-          {saving ? "Kaydediliyor..." : "Ürün Ekle"}
-        </button>
+        <div className="flex gap-3 md:col-span-2">
+          <button className="btn-primary w-full" type="submit" disabled={saving}>
+            {saving ? "Kaydediliyor..." : editingId ? "Ürünü Güncelle" : "Ürün Ekle"}
+          </button>
+          {editingId && (
+            <button className="btn-secondary" type="button" onClick={resetForm} disabled={saving}>
+              İptal
+            </button>
+          )}
+        </div>
       </form>
 
       {message && <p className="mt-3 text-sm text-accent">{message}</p>}
@@ -225,6 +286,19 @@ export function ProductManager() {
                 <p className="text-xs text-muted">
                   {product.category} • {product.condition} • ₺{Number(product.price).toLocaleString("tr-TR")}
                 </p>
+                <div className="mt-3 flex gap-2">
+                  <button className="btn-secondary text-xs" type="button" onClick={() => handleEditStart(product)}>
+                    Düzenle
+                  </button>
+                  <button
+                    className="btn-secondary text-xs"
+                    type="button"
+                    onClick={() => handleDelete(product)}
+                    disabled={deletingId === product.id}
+                  >
+                    {deletingId === product.id ? "Siliniyor..." : "Sil"}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
