@@ -20,7 +20,8 @@ export function PrintOrderForm() {
     event.preventDefault();
     setMessage("Talep gönderiliyor...");
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const fullName = String(formData.get("fullName") || "");
     const phone = String(formData.get("phone") || "");
     const note = String(formData.get("note") || "");
@@ -43,7 +44,7 @@ export function PrintOrderForm() {
       });
 
       setMessage(`Talep alındı. Referans kodu: ${result.referenceCode}`);
-      event.currentTarget.reset();
+  form.reset();
       setCopyCount(1);
       setPageCount(1);
       setPrintType("siyah");

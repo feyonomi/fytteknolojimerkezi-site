@@ -9,7 +9,8 @@ export function BillPaymentForm() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage("Talebiniz kaydediliyor...");
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     const payload = {
       fullName: String(formData.get("fullName") || ""),
@@ -34,7 +35,7 @@ export function BillPaymentForm() {
     }
 
     setMessage("Talebiniz alındı. Uygun kanal üzerinden sizinle iletişime geçeceğiz.");
-    event.currentTarget.reset();
+    form.reset();
   };
 
   return (

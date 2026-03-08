@@ -113,6 +113,20 @@ export function CrmPanel() {
           </article>
 
           <article className="glass-card p-5">
+            <h4 className="font-semibold">Randevu Kayıtları</h4>
+            <ul className="mt-3 space-y-2 text-sm">
+              {customer.appointments.map((appointment) => (
+                <li key={appointment.id} className="rounded-lg border p-2">
+                  {appointment.service}
+                  <p className="text-xs text-muted">
+                    {new Date(appointment.date).toLocaleString("tr-TR")} • {appointment.status}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          <article className="glass-card p-5">
             <h4 className="font-semibold">Personel Notları</h4>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
               {customer.notes.map((note) => (

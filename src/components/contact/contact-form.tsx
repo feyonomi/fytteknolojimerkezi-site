@@ -10,7 +10,8 @@ export function ContactForm() {
     event.preventDefault();
     setMessage("Mesajınız gönderiliyor...");
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const fullName = String(formData.get("fullName") || "");
     const phone = String(formData.get("phone") || "");
     const email = String(formData.get("email") || "");
@@ -26,7 +27,7 @@ export function ContactForm() {
       });
 
       setMessage(`Mesajınız alındı. Referans kodu: ${result.referenceCode}`);
-      event.currentTarget.reset();
+      form.reset();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Mesaj gönderilemedi.");
     }

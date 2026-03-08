@@ -16,7 +16,8 @@ export function AppointmentForm() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage("Randevu kaydediliyor...");
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     const payload = {
       fullName: String(formData.get("fullName") || ""),
@@ -40,7 +41,7 @@ export function AppointmentForm() {
     }
 
     setMessage("Randevu oluşturuldu. Hatırlatma tercihiniz kaydedildi.");
-    event.currentTarget.reset();
+    form.reset();
   };
 
   return (
@@ -50,10 +51,10 @@ export function AppointmentForm() {
       <form onSubmit={handleSubmit} className="mt-5 grid gap-3 md:grid-cols-2">
         <input name="fullName" className="rounded-lg border bg-transparent px-3 py-2 text-sm" placeholder="Ad Soyad" required />
         <input name="phone" className="rounded-lg border bg-transparent px-3 py-2 text-sm" placeholder="Telefon" required />
-        <select name="service" className="rounded-lg border bg-transparent px-3 py-2 text-sm" required>
-          <option value="">Hizmet seçin</option>
+        <select name="service" className="select-readable rounded-lg border bg-transparent px-3 py-2 text-sm" required>
+          <option value="" className="bg-white text-slate-900">Hizmet seçin</option>
           {serviceOptions.map((service) => (
-            <option key={service} value={service}>{service}</option>
+            <option key={service} value={service} className="bg-white text-slate-900">{service}</option>
           ))}
         </select>
         <input name="appointmentAt" type="datetime-local" className="rounded-lg border bg-transparent px-3 py-2 text-sm" required />

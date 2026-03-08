@@ -64,7 +64,8 @@ export function ProductCatalog() {
     event.preventDefault();
     setFormMessage("Talebiniz kaydediliyor...");
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const fullName = String(formData.get("fullName") || "");
     const phone = String(formData.get("phone") || "");
     const device = String(formData.get("device") || "");
@@ -85,7 +86,7 @@ export function ProductCatalog() {
       });
 
       setFormMessage(`Talep alındı. Referans kodu: ${result.referenceCode}`);
-      event.currentTarget.reset();
+      form.reset();
     } catch (error) {
       setFormMessage(error instanceof Error ? error.message : "Talep gönderilemedi.");
     }

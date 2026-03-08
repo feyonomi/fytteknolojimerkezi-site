@@ -19,7 +19,8 @@ export function ServiceCenter() {
     event.preventDefault();
     setFormMessage("Kaydediliyor...");
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const payload = {
       fullName: String(formData.get("fullName") || ""),
       phone: String(formData.get("phone") || ""),
@@ -40,7 +41,7 @@ export function ServiceCenter() {
     }
 
     setFormMessage(`Kayıt oluşturuldu. Takip kodu: ${result.trackingCode}`);
-    event.currentTarget.reset();
+    form.reset();
   };
 
   const handleTrackingSearch = async () => {
