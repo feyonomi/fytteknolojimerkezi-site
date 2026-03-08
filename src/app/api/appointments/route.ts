@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createAppointment } from "@/lib/server-crm";
 import { isValidPhone, sanitizeText } from "@/lib/validation";
+import { sendAppointmentWhatsappNotifications } from "@/lib/whatsapp";
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -30,6 +31,13 @@ export async function POST(request: NextRequest) {
   if (!result.success) {
     return NextResponse.json({ error: result.error || "Randevu oluşturulamadı." }, { status: 500 });
   }
+
+  void sendAppointmentWhatsappNotifications({
+    fullName: payload.fullName,
+    customerPhone: payload.phone,
+    service: payload.service,
+    appointmentAt: payload.appointmentAt,
+  });
 
   return NextResponse.json({ ok: true });
 }

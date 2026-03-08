@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createServiceOrder } from "@/lib/server-crm";
 import { isValidPhone, sanitizeText } from "@/lib/validation";
+import { sendServiceOrderWhatsappNotifications } from "@/lib/whatsapp";
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -27,6 +28,13 @@ export async function POST(request: NextRequest) {
   if (!result.success) {
     return NextResponse.json({ error: result.error || "Arıza kaydı oluşturulamadı." }, { status: 500 });
   }
+
+  void sendServiceOrderWhatsappNotifications({
+    fullName: payload.fullName,
+    customerPhone: payload.phone,
+    device: payload.device,
+    trackingCode: result.trackingCode,
+  });
 
   return NextResponse.json({ ok: true, trackingCode: result.trackingCode });
 }

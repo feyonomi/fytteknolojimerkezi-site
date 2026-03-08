@@ -38,10 +38,33 @@ Tarayıcı: `http://localhost:3000`
 - `NEXT_PUBLIC_TAWK_SRC` (opsiyonel canlı chat)
 - `ADMIN_PANEL_PASSWORD` (admin giriş şifresi)
 - `ADMIN_SESSION_TOKEN` (rastgele uzun token)
+- `WHATSAPP_CLOUD_API_TOKEN` (Meta permanent token)
+- `WHATSAPP_CLOUD_PHONE_NUMBER_ID` (Meta phone number id)
+- `WHATSAPP_CLOUD_API_VERSION` (opsiyonel, varsayılan: `v22.0`)
+- `WHATSAPP_TEMPLATE_LANGUAGE` (opsiyonel, varsayılan: `tr`)
+- `WHATSAPP_ADMIN_NUMBER` (sizin bildirim alacak numara, ör: `905xxxxxxxxx`)
+- `WHATSAPP_TEMPLATE_ADMIN_APPOINTMENT`
+- `WHATSAPP_TEMPLATE_ADMIN_LEAD`
+- `WHATSAPP_TEMPLATE_ADMIN_SERVICE_ORDER`
+- `WHATSAPP_TEMPLATE_CUSTOMER_APPOINTMENT`
+- `WHATSAPP_TEMPLATE_CUSTOMER_SECOND_HAND`
+- `WHATSAPP_TEMPLATE_CUSTOMER_CONTACT`
+- `WHATSAPP_TEMPLATE_CUSTOMER_SERVICE_ORDER`
 
 Supabase bilgileri yoksa sistem mock veriyle çalışır.
 
 Admin paneli koruması için `ADMIN_PANEL_PASSWORD` ve `ADMIN_SESSION_TOKEN` zorunludur.
+
+WhatsApp env değişkenleri girilmezse form kayıtları normal çalışır, sadece otomatik WhatsApp gönderimi yapılmaz.
+
+## WhatsApp Otomasyon (Meta Cloud API)
+
+- Otomatik mesajlar şu taleplerde tetiklenir: randevu, ikinci el/iletişim lead, servis arıza kaydı.
+- Her talepte 2 ayrı gönderim yapılır:
+	- Admin numaranıza yeni talep bildirimi
+	- Müşteriye onay/bilgilendirme mesajı
+- Mesajlar Meta template üzerinden gider; ilgili template adları env değişkenleriyle eşleşmelidir.
+- Müşteriye ilk mesaj gönderimi için Meta tarafında onaylı template ve yasal açık rıza (KVKK) gereklidir.
 
 ## Veritabanı
 

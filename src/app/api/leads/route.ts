@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createAdminSupabaseClient } from "@/lib/supabase";
 import { isValidPhone, sanitizeText } from "@/lib/validation";
+import { sendLeadWhatsappNotifications } from "@/lib/whatsapp";
 
 const leadTypes = ["second_hand", "print", "software", "contact", "offer"] as const;
 
@@ -83,6 +84,18 @@ export async function POST(request: NextRequest) {
   if (insert.error) {
     return NextResponse.json({ error: "Talep kaydedilemedi." }, { status: 500 });
   }
+
+  const metaRecord = meta as Record<string, unknown>;
+  const rawDevice = typeof metaRecord.device === "string" ? metaRecord.device : "";
+
+  void sendLeadWhatsappNotifications({
+    type,
+    fullName,
+    customerPhone: canonicalPhone,
+    referenceCode,
+    message,
+    device: sanitizeText(rawDevice, 120),
+  });
 
   return NextResponse.json({ ok: true, referenceCode });
 }
