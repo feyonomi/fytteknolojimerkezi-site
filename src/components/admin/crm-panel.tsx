@@ -31,6 +31,16 @@ type RecentServiceOrder = {
   createdAt: string;
 };
 
+type RecentContactLead = {
+  id: string;
+  referenceCode: string;
+  fullName: string;
+  phone: string;
+  message: string;
+  status: string;
+  createdAt: string;
+};
+
 export function CrmPanel() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,6 +54,8 @@ export function CrmPanel() {
   const [loadingSecondHandLeads, setLoadingSecondHandLeads] = useState(false);
   const [recentServiceOrders, setRecentServiceOrders] = useState<RecentServiceOrder[]>([]);
   const [loadingServiceOrders, setLoadingServiceOrders] = useState(false);
+  const [recentContactLeads, setRecentContactLeads] = useState<RecentContactLead[]>([]);
+  const [loadingContactLeads, setLoadingContactLeads] = useState(false);
 
   const loadRecentAppointments = async () => {
     setLoadingAppointments(true);
@@ -84,10 +96,24 @@ export function CrmPanel() {
     setRecentServiceOrders(Array.isArray(result.serviceOrders) ? result.serviceOrders : []);
   };
 
+  const loadRecentContactLeads = async () => {
+    setLoadingContactLeads(true);
+    const response = await fetch("/api/admin/contact-leads", { cache: "no-store" });
+    const result = await response.json();
+    setLoadingContactLeads(false);
+
+    if (!response.ok) {
+      return;
+    }
+
+    setRecentContactLeads(Array.isArray(result.leads) ? result.leads : []);
+  };
+
   useEffect(() => {
     loadRecentAppointments();
     loadRecentSecondHandLeads();
     loadRecentServiceOrders();
+    loadRecentContactLeads();
   }, []);
 
   const handleSearch = async () => {
@@ -221,6 +247,30 @@ export function CrmPanel() {
         )}
       </div>
 
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-lg font-semibold">Son İletişim Mesajları</h3>
+          <button className="btn-secondary text-sm" type="button" onClick={loadRecentContactLeads}>
+            {loadingContactLeads ? "Yükleniyor..." : "Yenile"}
+          </button>
+        </div>
+
+        {recentContactLeads.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">Henüz iletişim mesajı görünmüyor.</p>
+        ) : (
+          <ul className="mt-3 space-y-2 text-sm">
+            {recentContactLeads.map((lead) => (
+              <li key={lead.id} className="rounded-lg border p-3">
+                <p className="font-medium">{lead.fullName} • {lead.referenceCode}</p>
+                <p className="text-xs text-muted">{new Date(lead.createdAt).toLocaleString("tr-TR")} • {lead.status}</p>
+                <p className="mt-1 text-xs text-muted">Telefon: {lead.phone}</p>
+                <p className="mt-1 text-xs text-muted">{lead.message}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {customer && (
         <div className="grid gap-4 lg:grid-cols-2">
           <article className="glass-card p-5 lg:col-span-2">
@@ -291,6 +341,19 @@ export function CrmPanel() {
             <h4 className="font-semibold">2. El Satış Talepleri</h4>
             <ul className="mt-3 space-y-2 text-sm">
               {(customer.leadRequests || []).filter((item) => item.type === "second_hand").map((lead) => (
+                <li key={lead.id} className="rounded-lg border p-2">
+                  <p className="font-medium">{lead.referenceCode}</p>
+                  <p className="text-xs text-muted">{new Date(lead.date).toLocaleString("tr-TR")} • {lead.status}</p>
+                  <p className="mt-1 text-xs text-muted">{lead.message}</p>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          <article className="glass-card p-5">
+            <h4 className="font-semibold">İletişim Formu Mesajları</h4>
+            <ul className="mt-3 space-y-2 text-sm">
+              {(customer.leadRequests || []).filter((item) => item.type === "contact").map((lead) => (
                 <li key={lead.id} className="rounded-lg border p-2">
                   <p className="font-medium">{lead.referenceCode}</p>
                   <p className="text-xs text-muted">{new Date(lead.date).toLocaleString("tr-TR")} • {lead.status}</p>

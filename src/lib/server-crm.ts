@@ -26,6 +26,16 @@ export type RecentSecondHandLead = {
   createdAt: string;
 };
 
+export type RecentContactLead = {
+  id: string;
+  referenceCode: string;
+  fullName: string;
+  phone: string;
+  message: string;
+  status: string;
+  createdAt: string;
+};
+
 export type RecentServiceOrder = {
   id: string;
   phone: string;
@@ -486,6 +496,43 @@ export async function getRecentSecondHandLeads(limit = 20): Promise<RecentSecond
     .from("lead_requests")
     .select("id, reference_code, full_name, phone, message, status, created_at")
     .eq("lead_type", "second_hand")
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (query.error || !query.data) {
+    return [];
+  }
+
+  return query.data.map((item: {
+    id: string;
+    reference_code: string;
+    full_name: string;
+    phone: string;
+    message: string;
+    status: string;
+    created_at: string;
+  }) => ({
+    id: item.id,
+    referenceCode: item.reference_code,
+    fullName: item.full_name,
+    phone: item.phone,
+    message: item.message,
+    status: item.status,
+    createdAt: item.created_at,
+  }));
+}
+
+export async function getRecentContactLeads(limit = 20): Promise<RecentContactLead[]> {
+  const supabase = createAdminSupabaseClient();
+  if (!supabase) {
+    return [];
+  }
+
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(50, Math.floor(limit))) : 20;
+  const query = await supabase
+    .from("lead_requests")
+    .select("id, reference_code, full_name, phone, message, status, created_at")
+    .eq("lead_type", "contact")
     .order("created_at", { ascending: false })
     .limit(safeLimit);
 
