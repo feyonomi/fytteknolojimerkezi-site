@@ -7,6 +7,11 @@ import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from "@/data/product-options";
 const CATEGORIES: ProductItem["category"][] = PRODUCT_CATEGORIES;
 const CONDITIONS: ProductItem["condition"][] = PRODUCT_CONDITIONS;
 
+const normalizeByList = <T extends string>(value: string, options: T[]) => {
+  const lower = value.toLocaleLowerCase("tr");
+  return options.find((item) => item.toLocaleLowerCase("tr") === lower) || null;
+};
+
 export async function GET() {
   const products = await getAdminProducts();
   return NextResponse.json({ products });
@@ -23,22 +28,25 @@ export async function POST(request: Request) {
 
   const payload = body as Record<string, unknown>;
   const name = sanitizeText(payload.name, 120);
-  const category = sanitizeText(payload.category, 20) as ProductItem["category"];
-  const condition = sanitizeText(payload.condition, 20) as ProductItem["condition"];
+  const rawCategory = sanitizeText(payload.category, 40);
+  const rawCondition = sanitizeText(payload.condition, 40);
+  const category = normalizeByList(rawCategory, CATEGORIES);
+  const condition = normalizeByList(rawCondition, CONDITIONS);
   const imageUrl = sanitizeText(payload.imageUrl, 500) || null;
   const popular = Boolean(payload.popular);
   const isActive = payload.isActive === undefined ? true : Boolean(payload.isActive);
-  const price = Number(payload.price);
+  const priceRaw = String(payload.price ?? "").replace(",", ".");
+  const price = Number(priceRaw);
 
   if (name.length < 2) {
     return NextResponse.json({ error: "Ürün adı en az 2 karakter olmalıdır." }, { status: 400 });
   }
 
-  if (!CATEGORIES.includes(category)) {
+  if (!category) {
     return NextResponse.json({ error: "Geçersiz ürün kategorisi." }, { status: 400 });
   }
 
-  if (!CONDITIONS.includes(condition)) {
+  if (!condition) {
     return NextResponse.json({ error: "Geçersiz ürün durumu." }, { status: 400 });
   }
 
