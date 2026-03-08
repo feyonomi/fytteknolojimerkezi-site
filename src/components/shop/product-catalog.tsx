@@ -17,7 +17,7 @@ export function ProductCatalog() {
 
     const loadProducts = async () => {
       try {
-        const response = await fetch("/api/products", { cache: "no-store" });
+        const response = await fetch(`/api/products?ts=${Date.now()}`, { cache: "no-store" });
         const result = await response.json();
         if (active) {
           setProducts(Array.isArray(result.products) ? result.products : []);
