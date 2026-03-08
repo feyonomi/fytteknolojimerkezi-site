@@ -26,6 +26,16 @@ export type RecentSecondHandLead = {
   createdAt: string;
 };
 
+export type RecentServiceOrder = {
+  id: string;
+  phone: string;
+  device: string;
+  issue: string;
+  status: string;
+  trackingCode: string;
+  createdAt: string;
+};
+
 const buildPhoneVariants = (phone: string) => {
   const digits = phone.replace(/\D/g, "");
   const normalized = normalizePhone(phone);
@@ -85,6 +95,45 @@ export async function findCustomerRecord(phone: string): Promise<CustomerRecord 
     .maybeSingle();
 
   if (profileQuery.error || !profileQuery.data) {
+    const serviceOnlyResult = await supabase
+      .from("service_orders")
+      .select("id, customer_phone, device, issue, status, created_at, warranty_end")
+      .or(buildPhoneFilter("customer_phone", variants))
+      .order("created_at", { ascending: false });
+
+    if (serviceOnlyResult.data && serviceOnlyResult.data.length > 0) {
+      const latestService = serviceOnlyResult.data[0] as {
+        customer_phone: string;
+      };
+
+      return {
+        id: `service-${normalizePhone(latestService.customer_phone)}`,
+        fullName: "Bilinmeyen Müşteri",
+        phone: latestService.customer_phone,
+        notes: [],
+        repairs: serviceOnlyResult.data.map((item: {
+          id: string;
+          device: string;
+          issue: string;
+          status: string;
+          created_at: string;
+          warranty_end: string;
+        }) => ({
+          id: item.id,
+          device: item.device,
+          issue: item.issue,
+          status: item.status,
+          date: item.created_at,
+          warrantyEnd: item.warranty_end,
+        })),
+        purchases: [],
+        billPayments: [],
+        callLogs: [],
+        appointments: [],
+        leadRequests: [],
+      };
+    }
+
     const leadOnlyResult = await supabase
       .from("lead_requests")
       .select("id, reference_code, lead_type, full_name, phone, message, status, created_at")
@@ -297,7 +346,7 @@ export async function createServiceOrder(payload: {
   const supabase = createAdminSupabaseClient();
 
   if (!supabase) {
-    return { success: true, trackingCode };
+    return { success: false, trackingCode, error: "Veritabanı bağlantısı yapılandırılmamış." };
   }
 
   const canonicalPhone = toCanonicalPhone(payload.phone);
@@ -459,6 +508,42 @@ export async function getRecentSecondHandLeads(limit = 20): Promise<RecentSecond
     phone: item.phone,
     message: item.message,
     status: item.status,
+    createdAt: item.created_at,
+  }));
+}
+
+export async function getRecentServiceOrders(limit = 20): Promise<RecentServiceOrder[]> {
+  const supabase = createAdminSupabaseClient();
+  if (!supabase) {
+    return [];
+  }
+
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(50, Math.floor(limit))) : 20;
+  const query = await supabase
+    .from("service_orders")
+    .select("id, customer_phone, device, issue, status, tracking_code, created_at")
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (query.error || !query.data) {
+    return [];
+  }
+
+  return query.data.map((item: {
+    id: string;
+    customer_phone: string;
+    device: string;
+    issue: string;
+    status: string;
+    tracking_code: string;
+    created_at: string;
+  }) => ({
+    id: item.id,
+    phone: item.customer_phone,
+    device: item.device,
+    issue: item.issue,
+    status: item.status,
+    trackingCode: item.tracking_code,
     createdAt: item.created_at,
   }));
 }

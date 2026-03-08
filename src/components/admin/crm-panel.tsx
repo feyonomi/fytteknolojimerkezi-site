@@ -21,6 +21,16 @@ type RecentSecondHandLead = {
   createdAt: string;
 };
 
+type RecentServiceOrder = {
+  id: string;
+  phone: string;
+  device: string;
+  issue: string;
+  status: string;
+  trackingCode: string;
+  createdAt: string;
+};
+
 export function CrmPanel() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,6 +42,8 @@ export function CrmPanel() {
   const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [recentSecondHandLeads, setRecentSecondHandLeads] = useState<RecentSecondHandLead[]>([]);
   const [loadingSecondHandLeads, setLoadingSecondHandLeads] = useState(false);
+  const [recentServiceOrders, setRecentServiceOrders] = useState<RecentServiceOrder[]>([]);
+  const [loadingServiceOrders, setLoadingServiceOrders] = useState(false);
 
   const loadRecentAppointments = async () => {
     setLoadingAppointments(true);
@@ -59,9 +71,23 @@ export function CrmPanel() {
     setRecentSecondHandLeads(Array.isArray(result.leads) ? result.leads : []);
   };
 
+  const loadRecentServiceOrders = async () => {
+    setLoadingServiceOrders(true);
+    const response = await fetch("/api/admin/service-orders", { cache: "no-store" });
+    const result = await response.json();
+    setLoadingServiceOrders(false);
+
+    if (!response.ok) {
+      return;
+    }
+
+    setRecentServiceOrders(Array.isArray(result.serviceOrders) ? result.serviceOrders : []);
+  };
+
   useEffect(() => {
     loadRecentAppointments();
     loadRecentSecondHandLeads();
+    loadRecentServiceOrders();
   }, []);
 
   const handleSearch = async () => {
@@ -165,6 +191,30 @@ export function CrmPanel() {
                 <p className="text-xs text-muted">{new Date(lead.createdAt).toLocaleString("tr-TR")} • {lead.status}</p>
                 <p className="mt-1 text-xs text-muted">Telefon: {lead.phone}</p>
                 <p className="mt-1 text-xs text-muted">{lead.message}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-lg font-semibold">Son Arıza Bildirimleri</h3>
+          <button className="btn-secondary text-sm" type="button" onClick={loadRecentServiceOrders}>
+            {loadingServiceOrders ? "Yükleniyor..." : "Yenile"}
+          </button>
+        </div>
+
+        {recentServiceOrders.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">Henüz arıza bildirimi görünmüyor.</p>
+        ) : (
+          <ul className="mt-3 space-y-2 text-sm">
+            {recentServiceOrders.map((order) => (
+              <li key={order.id} className="rounded-lg border p-3">
+                <p className="font-medium">{order.device} • {order.trackingCode}</p>
+                <p className="text-xs text-muted">{new Date(order.createdAt).toLocaleString("tr-TR")} • {order.status}</p>
+                <p className="mt-1 text-xs text-muted">Telefon: {order.phone}</p>
+                <p className="mt-1 text-xs text-muted">{order.issue}</p>
               </li>
             ))}
           </ul>
